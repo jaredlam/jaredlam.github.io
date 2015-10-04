@@ -143,7 +143,7 @@
 ==== VIEW_TYPE_NEWS_SUGGESTION ==== 
 </code></pre>
 
-<p>&emsp;果然！当为当前有一个Item为VIEW_TYPE_NEWS_LATEST这种type时，手指一放上屏幕，getView就会被调用了很多次！</p>
+<p>&emsp;果然！当Item为VIEW_TYPE_NEWS_LATEST这种type时，手指一放上屏幕，getView就会被调用了很多次！</p>
 
 <p>&emsp;getView这种异常频繁的调用在之前也遇到过，不过通常是因为ListView的android:layout_height被设置成了wrap_content, 导致其需要在Layout时调用getView去计算自身高度导致的。改成match_parent或者固定值就好了。具体可以参考<a href="http://stackoverflow.com/questions/2618272/custom-listview-adapter-getview-method-being-called-multiple-times-and-in-no-co">StackOverFlow上这个问题</a>。</p>
 
