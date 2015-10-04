@@ -185,7 +185,7 @@ if ((recycled &amp;&amp; !p.forceAdd) || (p.recycledHeaderFooter
 
 <p>&emsp;另外，看看ListView是怎么处理这种情况的，当其为Header或者Footer时，会调用attachViewToParent方法；而当前View为普通Item时，则调用addViewInLayout方法，并传入最后一个参数preventRequestLayout为true：</p>
 
-<pre><code>@param preventRequestLayout if true, calling this method                   will not trigger a layout request on child
+<pre><code>@param preventRequestLayout if true, calling this method will not trigger a layout request on child
 </code></pre>
 
 <p>&emsp;这里对Header/Footer与普通View处理方式的不同造成了这种情况。</p>
