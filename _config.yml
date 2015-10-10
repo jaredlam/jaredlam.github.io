@@ -2,10 +2,10 @@
 #      Main Configs       #
 # ----------------------- #
 
-url: http://yoursite.com
-title: My Octopress Blog
-subtitle: A blogging framework for hackers.
-author: Your Name
+url: http://jaredlam.github.io
+title: Jared的Android之路 
+subtitle: 不让岁月磨去心中的热爱
+author: Jared Luo
 simple_search: https://www.google.com/search
 description:
 
@@ -70,8 +70,8 @@ github_show_profile_link: true
 github_skip_forks: true
 
 # Twitter
-twitter_user:
-twitter_tweet_button: true
+# twitter_user:
+# twitter_tweet_button: true
 
 # Google +1
 google_plus_one: false
@@ -99,3 +99,6 @@ google_analytics_tracking_id:
 
 # Facebook Like
 facebook_like: false
+
+# Weibo
+weibo_share: true
