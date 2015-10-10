@@ -1,0 +1,127 @@
+---
+layout: post
+title: "Android ListView中使用多种Type时，getItemViewType返回值不能为负数，特别是-2"
+date: 2015-10-02 16:03:39 +0800
+comments: true
+categories: 
+---
+##背景
+
+> 大家在Android开发中使用，常常由于业务的需求，会重写ListView的getItemViewType方法，来展示不同种类的Items；比如微博客户端，就有很多类型的Item(比如，普通微博，转发，推荐...)。 在公司项目的开发中，我们也采用了这种手段。但是没想到却意外的遇到了问题......
+
+&emsp; 其实遇到的问题也很简单, 假设我们有6种类型的item需要展示在ListView当中，我们会在Adapter中这样去写
+```java
+        public static final int VIEW_TYPE_NEWS_SPORT = 1;
+        public static final int VIEW_TYPE_NEWS_SOCIAL = 2;
+        public static final int VIEW_TYPE_NEWS_POLITICS = 3;
+        public static final int VIEW_TYPE_NEWS_SIGNIFICANT = -1;
+        public static final int VIEW_TYPE_NEWS_LATEST = -2;
+        public static final int VIEW_TYPE_NEWS_SUGGESTION = -3;
+```
+&emsp; 上面我们在Adapter中定义好了6个常量，分别对应我们要展示的6种type。前三种type是我们和服务端约定好的，后面三种是客户端自己加入的，为了良好的扩展性，我们将后三种定义为负数，以免和以后服务端增加的type有所冲突。
+```java
+        @Override
+        public int getItemViewType(int position) {
+            return getCurrentTypeByPosition([position]);
+        }
+    
+        @Override
+        public int getViewTypeCount() {
+            return 6;
+        }
+```
+&emsp; 然后就是重写这两个方法，根据数据结构的特征，返回不同的type。
+```java
+        @Override
+        getView(View convertView){
+           switch(type){
+       	       case:
+                    .....
+            }
+        }
+```
+&emsp; 接下来，当然是在getView中根据不同的类型，返回不同的View。然后代码基本就是这样，APP运行起来也符合我们的预期。目前看起来一切ok。
+
+&emsp; 不过，当ListView数据量大一点过后，我们发现了一个现象：每当ListView滚动到VIEW_TYPE_NEWS_POLITICS这种type的Item的时候，会有一点卡顿掉帧的现象。另外，我们的图片异步加载出来后，有一个渐变的动画，每当这种Item呈现出来时，只要手指放在屏幕上，轻轻移动，这个Item中的图片，就会频繁闪动。
+
+&emsp; 起初遇到这个Bug时，我的心情还是很淡定的。猜想是因为这个item的getView被频繁调用了多次呗，于是在getView方法中每种Type里都记下了日志，一运行，输出是这样的：
+```java
+    ==== VIEW_TYPE_NEWS_SPORT ==== 
+    ==== VIEW_TYPE_NEWS_POLITICS ==== 
+    ==== VIEW_TYPE_NEWS_LATEST ==== 
+    ==== VIEW_TYPE_NEWS_LATEST ==== 
+    ==== VIEW_TYPE_NEWS_LATEST ==== 
+    ==== VIEW_TYPE_NEWS_LATEST ==== 
+    ==== VIEW_TYPE_NEWS_LATEST ==== 
+    ....
+    ==== VIEW_TYPE_NEWS_LATEST ==== 
+    ==== VIEW_TYPE_NEWS_SIGNIFICANT ==== 
+    ==== VIEW_TYPE_NEWS_SOCIAL ==== 
+    ==== VIEW_TYPE_NEWS_SUGGESTION ==== 
+```
+
+&emsp;果然！当Item为VIEW_TYPE_NEWS_LATEST这种type时，手指一放上屏幕，getView就会被调用了很多次！
+
+&emsp;getView这种异常频繁的调用在之前也遇到过，不过通常是因为ListView的android:layout_height被设置成了wrap_content, 导致其需要在Layout时调用getView去计算自身高度导致的。改成match_parent或者固定值就好了。具体可以参考[StackOverFlow上这个问题](http://stackoverflow.com/questions/2618272/custom-listview-adapter-getview-method-being-called-multiple-times-and-in-no-co)。
+
+&emsp; 不过，这次似乎有点不同，我检查了ListView的android:layout_height，确实是match_parent。并且这次只有这一个Item类型出现这种状况，另外5种却完全正常。
+
+&emsp; 接下来，我分别尝试了改换VIEW_TYPE_NEWS_LATEST的布局文件，更换这种Item在列表中的位置。可这个问题却和这种Type如影随行，不管怎么改动，只要当前Item的Type为VIEW_TYPE_NEWS_LATEST，getView便会被调用个不停。
+
+&emsp; 此刻，我的心情是崩溃的T^T
+
+
+&emsp; 冷静下来想了想，这个现象，既然和位置，布局都没有关系，唯一的关系大概也就只剩下VIEW_TYPE_NEWS_LATEST这个Type的值了吧？不管了，试一下，把换VIEW_TYPE_NEWS_LATEST改成了4。
+
+&emsp; 运行...
+
+&emsp; ...
+
+&emsp; ...
+
+&emsp; 居然好了！！！当手指放到这个type上的时候，一大堆getView的日志居然消失了！！！
+
+&emsp; 于是马上想到，这个特别的值 **-2**，一定在源码中有所应用吧。
+
+&emsp;于是，马上打开ListView源码，搜索使用getItemViewType的地方，果然发现了如下代码：
+```java  
+    p.viewType = mAdapter.getItemViewType(position);
+
+    if ((recycled && !p.forceAdd) || (p.recycledHeaderFooter
+            && p.viewType == AdapterView.ITEM_VIEW_TYPE_HEADER_OR_FOOTER)) {
+        attachViewToParent(child, flowDown ? -1 : 0, p);
+    } else {
+        p.forceAdd = false;
+        if (p.viewType == AdapterView.ITEM_VIEW_TYPE_HEADER_OR_FOOTER) {
+            p.recycledHeaderFooter = true;
+        }
+        addViewInLayout(child, flowDown ? -1 : 0, p, true);
+    }
+```
+&emsp;注意，AdapterView.ITEM_VIEW_TYPE_HEADER_OR_FOOTER 的值为-2，很简单，当item type为-2时，就把当前这种type当成了Header或者Footer。
+
+&emsp;另外，看看ListView是怎么处理这种情况的，当其为Header或者Footer时，会调用attachViewToParent方法；而当前View为普通Item时，则调用addViewInLayout方法，并传入最后一个参数preventRequestLayout为true：
+
+    @param preventRequestLayout if true, calling this method will not trigger a layout request on child
+    
+&emsp;这里对Header/Footer与普通View处理方式的不同造成了这种情况。
+
+&emsp;另外，除了-2之外，使用其他负数貌似也会使View无法成功的被缓存，源码如下：
+```java
+        if (recycleOnMeasure() && mRecycler.shouldRecycleViewType(
+                    ((LayoutParams) child.getLayoutParams()).viewType)) {
+                mRecycler.addScrapView(child, 0);
+        }
+
+        public boolean shouldRecycleViewType(int viewType) {
+            return viewType >= 0;
+        }
+```
+
+&emsp;最后，去看看文档上对getItemViewType的return写的什么：
+
+    Note: Integers must be in the range 0 to getViewTypeCount() - 1. IGNORE_ITEM_VIEW_TYPE can also be returned.
+
+&emsp;话说，自己对文档和源码不熟悉，才导致了这次的问题；编写代码的时候还是要注意细节，要不很容易造成隐含的问题。不过话说回来，Android这API设计的，也太...
+ 
+
