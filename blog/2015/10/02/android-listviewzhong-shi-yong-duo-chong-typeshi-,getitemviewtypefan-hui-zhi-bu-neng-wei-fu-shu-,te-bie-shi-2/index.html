@@ -1,0 +1,392 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Android ListView中使用多种Type时，getItemViewType返回值不能为负数，特别是-2 - Jared的Android之路</title>
+  <meta name="author" content="Jared Luo">
+
+  
+  <meta name="description" content="背景 大家在Android开发中使用，常常由于业务的需求，会重写ListView的getItemViewType方法，来展示不同种类的Items；比如微博客户端，就有很多类型的Item(比如，普通微博，转发，推荐&hellip;)。 在公司项目的开发中，我们也采用了这种手段。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://jaredlam.github.io/blog/2015/10/02/android-listviewzhong-shi-yong-duo-chong-typeshi-,getitemviewtypefan-hui-zhi-bu-neng-wei-fu-shu-,te-bie-shi-2/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Jared的Android之路" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.useso.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.useso.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.useso.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+<script src="//ajax.useso.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+<meta name="baidu-site-verification" content="imsMt4QXtD" />
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Jared的Android之路</a></h1>
+  
+    <h2>不让岁月磨去心中的热爱</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="jaredlam.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Android ListView中使用多种Type时，getItemViewType返回值不能为负数，特别是-2</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-10-02T16:03:39+08:00'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>2</span><span class='date-suffix'>nd</span>, <span class='date-year'>2015</span></span> <span class='time'>4:03 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h2>背景</h2>
+
+<blockquote><p>大家在Android开发中使用，常常由于业务的需求，会重写ListView的getItemViewType方法，来展示不同种类的Items；比如微博客户端，就有很多类型的Item(比如，普通微博，转发，推荐&hellip;)。 在公司项目的开发中，我们也采用了这种手段。但是没想到却意外的遇到了问题&hellip;&hellip;</p></blockquote>
+
+<p>&emsp; 其实遇到的问题也很简单, 假设我们有6种类型的item需要展示在ListView当中，我们会在Adapter中这样去写</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">VIEW_TYPE_NEWS_SPORT</span> <span class="o">=</span> <span class="mi">1</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">VIEW_TYPE_NEWS_SOCIAL</span> <span class="o">=</span> <span class="mi">2</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">VIEW_TYPE_NEWS_POLITICS</span> <span class="o">=</span> <span class="mi">3</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">VIEW_TYPE_NEWS_SIGNIFICANT</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">VIEW_TYPE_NEWS_LATEST</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">VIEW_TYPE_NEWS_SUGGESTION</span> <span class="o">=</span> <span class="o">-</span><span class="mi">3</span><span class="o">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&emsp; 上面我们在Adapter中定义好了6个常量，分别对应我们要展示的6种type。前三种type是我们和服务端约定好的，后面三种是客户端自己加入的，为了良好的扩展性，我们将后三种定义为负数，以免和以后服务端增加的type有所冲突。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">getItemViewType</span><span class="o">(</span><span class="kt">int</span> <span class="n">position</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">getCurrentTypeByPosition</span><span class="o">([</span><span class="n">position</span><span class="o">]);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">getViewTypeCount</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="mi">6</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&emsp; 然后就是重写这两个方法，根据数据结构的特征，返回不同的type。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="n">getView</span><span class="o">(</span><span class="n">View</span> <span class="n">convertView</span><span class="o">){</span>
+</span><span class='line'>       <span class="k">switch</span><span class="o">(</span><span class="n">type</span><span class="o">){</span>
+</span><span class='line'>             <span class="k">case</span><span class="o">:</span>
+</span><span class='line'>                <span class="o">.....</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&emsp; 接下来，当然是在getView中根据不同的类型，返回不同的View。然后代码基本就是这样，APP运行起来也符合我们的预期。目前看起来一切ok。</p>
+
+<p>&emsp; 不过，当ListView数据量大一点过后，我们发现了一个现象：每当ListView滚动到VIEW_TYPE_NEWS_POLITICS这种type的Item的时候，会有一点卡顿掉帧的现象。另外，我们的图片异步加载出来后，有一个渐变的动画，每当这种Item呈现出来时，只要手指放在屏幕上，轻轻移动，这个Item中的图片，就会频繁闪动。</p>
+
+<p>&emsp; 起初遇到这个Bug时，我的心情还是很淡定的。猜想是因为这个item的getView被频繁调用了多次呗，于是在getView方法中每种Type里都记下了日志，一运行，输出是这样的：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">====</span> <span class="n">VIEW_TYPE_NEWS_SPORT</span> <span class="o">====</span>
+</span><span class='line'><span class="o">====</span> <span class="n">VIEW_TYPE_NEWS_POLITICS</span> <span class="o">====</span>
+</span><span class='line'><span class="o">====</span> <span class="n">VIEW_TYPE_NEWS_LATEST</span> <span class="o">====</span>
+</span><span class='line'><span class="o">====</span> <span class="n">VIEW_TYPE_NEWS_LATEST</span> <span class="o">====</span>
+</span><span class='line'><span class="o">====</span> <span class="n">VIEW_TYPE_NEWS_LATEST</span> <span class="o">====</span>
+</span><span class='line'><span class="o">====</span> <span class="n">VIEW_TYPE_NEWS_LATEST</span> <span class="o">====</span>
+</span><span class='line'><span class="o">====</span> <span class="n">VIEW_TYPE_NEWS_LATEST</span> <span class="o">====</span>
+</span><span class='line'><span class="o">....</span>
+</span><span class='line'><span class="o">====</span> <span class="n">VIEW_TYPE_NEWS_LATEST</span> <span class="o">====</span>
+</span><span class='line'><span class="o">====</span> <span class="n">VIEW_TYPE_NEWS_SIGNIFICANT</span> <span class="o">====</span>
+</span><span class='line'><span class="o">====</span> <span class="n">VIEW_TYPE_NEWS_SOCIAL</span> <span class="o">====</span>
+</span><span class='line'><span class="o">====</span> <span class="n">VIEW_TYPE_NEWS_SUGGESTION</span> <span class="o">====</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&emsp;果然！当Item为VIEW_TYPE_NEWS_LATEST这种type时，手指一放上屏幕，getView就会被调用了很多次！</p>
+
+<p>&emsp;getView这种异常频繁的调用在之前也遇到过，不过通常是因为ListView的android:layout_height被设置成了wrap_content, 导致其需要在Layout时调用getView去计算自身高度导致的。改成match_parent或者固定值就好了。具体可以参考<a href="http://stackoverflow.com/questions/2618272/custom-listview-adapter-getview-method-being-called-multiple-times-and-in-no-co">StackOverFlow上这个问题</a>。</p>
+
+<p>&emsp; 不过，这次似乎有点不同，我检查了ListView的android:layout_height，确实是match_parent。并且这次只有这一个Item类型出现这种状况，另外5种却完全正常。</p>
+
+<p>&emsp; 接下来，我分别尝试了改换VIEW_TYPE_NEWS_LATEST的布局文件，更换这种Item在列表中的位置。可这个问题却和这种Type如影随行，不管怎么改动，只要当前Item的Type为VIEW_TYPE_NEWS_LATEST，getView便会被调用个不停。</p>
+
+<p>&emsp; 此刻，我的心情是崩溃的T<sup>T</sup></p>
+
+<p>&emsp; 冷静下来想了想，这个现象，既然和位置，布局都没有关系，唯一的关系大概也就只剩下VIEW_TYPE_NEWS_LATEST这个Type的值了吧？不管了，试一下，把换VIEW_TYPE_NEWS_LATEST改成了4。</p>
+
+<p>&emsp; 运行&hellip;</p>
+
+<p>&emsp; &hellip;</p>
+
+<p>&emsp; &hellip;</p>
+
+<p>&emsp; 居然好了！！！当手指放到这个type上的时候，一大堆getView的日志居然消失了！！！</p>
+
+<p>&emsp; 于是马上想到，这个特别的值 <strong>-2</strong>，一定在源码中有所应用吧。</p>
+
+<p>&emsp;于是，马上打开ListView源码，搜索使用getItemViewType的地方，果然发现了如下代码：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">p</span><span class="o">.</span><span class="na">viewType</span> <span class="o">=</span> <span class="n">mAdapter</span><span class="o">.</span><span class="na">getItemViewType</span><span class="o">(</span><span class="n">position</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="o">((</span><span class="n">recycled</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">p</span><span class="o">.</span><span class="na">forceAdd</span><span class="o">)</span> <span class="o">||</span> <span class="o">(</span><span class="n">p</span><span class="o">.</span><span class="na">recycledHeaderFooter</span>
+</span><span class='line'>        <span class="o">&amp;&amp;</span> <span class="n">p</span><span class="o">.</span><span class="na">viewType</span> <span class="o">==</span> <span class="n">AdapterView</span><span class="o">.</span><span class="na">ITEM_VIEW_TYPE_HEADER_OR_FOOTER</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">attachViewToParent</span><span class="o">(</span><span class="n">child</span><span class="o">,</span> <span class="n">flowDown</span> <span class="o">?</span> <span class="o">-</span><span class="mi">1</span> <span class="o">:</span> <span class="mi">0</span><span class="o">,</span> <span class="n">p</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">p</span><span class="o">.</span><span class="na">forceAdd</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">p</span><span class="o">.</span><span class="na">viewType</span> <span class="o">==</span> <span class="n">AdapterView</span><span class="o">.</span><span class="na">ITEM_VIEW_TYPE_HEADER_OR_FOOTER</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">p</span><span class="o">.</span><span class="na">recycledHeaderFooter</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="n">addViewInLayout</span><span class="o">(</span><span class="n">child</span><span class="o">,</span> <span class="n">flowDown</span> <span class="o">?</span> <span class="o">-</span><span class="mi">1</span> <span class="o">:</span> <span class="mi">0</span><span class="o">,</span> <span class="n">p</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&emsp;注意，AdapterView.ITEM_VIEW_TYPE_HEADER_OR_FOOTER 的值为-2，很简单，当item type为-2时，就把当前这种type当成了Header或者Footer。</p>
+
+<p>&emsp;另外，看看ListView是怎么处理这种情况的，当其为Header或者Footer时，会调用attachViewToParent方法；而当前View为普通Item时，则调用addViewInLayout方法，并传入最后一个参数preventRequestLayout为true：</p>
+
+<pre><code>@param preventRequestLayout if true, calling this method will not trigger a layout request on child
+</code></pre>
+
+<p>&emsp;这里对Header/Footer与普通View处理方式的不同造成了这种情况。</p>
+
+<p>&emsp;另外，除了-2之外，使用其他负数貌似也会使View无法成功的被缓存，源码如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">recycleOnMeasure</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="n">mRecycler</span><span class="o">.</span><span class="na">shouldRecycleViewType</span><span class="o">(</span>
+</span><span class='line'>                <span class="o">((</span><span class="n">LayoutParams</span><span class="o">)</span> <span class="n">child</span><span class="o">.</span><span class="na">getLayoutParams</span><span class="o">()).</span><span class="na">viewType</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">mRecycler</span><span class="o">.</span><span class="na">addScrapView</span><span class="o">(</span><span class="n">child</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">shouldRecycleViewType</span><span class="o">(</span><span class="kt">int</span> <span class="n">viewType</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">viewType</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&emsp;最后，去看看文档上对getItemViewType的return写的什么：</p>
+
+<pre><code>Note: Integers must be in the range 0 to getViewTypeCount() - 1. IGNORE_ITEM_VIEW_TYPE can also be returned.
+</code></pre>
+
+<p>&emsp;话说，自己对文档和源码不熟悉，才导致了这次的问题；编写代码的时候还是要注意细节，要不很容易造成隐含的问题。不过话说回来，Android这API设计的，也太&hellip;</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Jared Luo</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-10-02T16:03:39+08:00'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>2</span><span class='date-suffix'>nd</span>, <span class='date-year'>2015</span></span> <span class='time'>4:03 pm</span></time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+  
+     <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style_32x32">
+<a class="jiathis_button_tsina"></a>
+<a class="jiathis_button_weixin"></a>
+<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+var jiathis_config={
+	siteNum:2,
+	sm:"tsina,weixin",
+	summary:"",
+	boldNum:2,
+	shortUrl:false,
+	hideMore:true
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code_mini/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+<!-- UY BEGIN -->
+<div id="uyan_frame"></div>
+<script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=2062682"></script>
+<!-- UY END -->
+
+
+  
+</div>
+
+    
+    <p class="meta">
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun/" title="Next Post: Android中FragmentPagerAdapter对Fragment的缓存(一)">Android中FragmentPagerAdapter对Fragment的缓存(一) &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/10/10/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun-er/">Android中FragmentPagerAdapter对Fragment的缓存(二)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun/">Android中FragmentPagerAdapter对Fragment的缓存(一)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/10/02/android-listviewzhong-shi-yong-duo-chong-typeshi-,getitemviewtypefan-hui-zhi-bu-neng-wei-fu-shu-,te-bie-shi-2/">Android ListView中使用多种Type时，getItemViewType返回值不能为负数，特别是-2</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - Jared Luo -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1256505848'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s4.cnzz.com/z_stat.php%3Fid%3D1256505848%26show%3Dpic2' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

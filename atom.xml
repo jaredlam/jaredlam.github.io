@@ -1,96 +1,24 @@
-<!DOCTYPE html>
-<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
-<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
-<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
-<head>
-  <meta charset="utf-8">
-  <title>Jared的Android之路</title>
-  <meta name="author" content="Jared Luo">
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
 
-  
-  <meta name="description" content="上一篇我们谈到了，当应用程序恢复时，由于FragmentPagerAdapter对Fragment进行了缓存的读取，导致其并未使用在Activity中新创建的Fragment实例。今天我们来看如何解决这种情况。 &emsp;根据上篇Blog的描述，我们不难发现，目前需要解决的问题有以下两个： & &hellip;">
-  
-
-  <!-- http://t.co/dKP3o1e -->
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  
-  <link rel="canonical" href="http://jaredlam.github.io/">
-  <link href="/favicon.png" rel="icon">
-  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <link href="/atom.xml" rel="alternate" title="Jared的Android之路" type="application/atom+xml">
-  <script src="/javascripts/modernizr-2.0.js"></script>
-  <script src="//ajax.useso.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
-  <script src="/javascripts/octopress.js" type="text/javascript"></script>
-  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<link href="//fonts.useso.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href="//fonts.useso.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-
-<script src="//ajax.useso.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-
-<meta name="baidu-site-verification" content="imsMt4QXtD" />
-
-  
-
-</head>
-
-<body   >
-  <header role="banner"><hgroup>
-  <h1><a href="/">Jared的Android之路</a></h1>
-  
-    <h2>不让岁月磨去心中的热爱</h2>
-  
-</hgroup>
-
-</header>
-  <nav role="navigation"><ul class="subscription" data-subscription="rss">
-  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
-  
-</ul>
-  
-<form action="https://www.google.com/search" method="get">
-  <fieldset role="search">
-    <input type="hidden" name="sitesearch" value="jaredlam.github.io">
-    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
-  </fieldset>
-</form>
-  
-<ul class="main-navigation">
-  <li><a href="/">Blog</a></li>
-  <li><a href="/blog/archives">Archives</a></li>
-</ul>
-
-</nav>
-  <div id="main">
-    <div id="content">
-      <div class="blog-index">
-  
-  
-  
-    <article>
-      
-  <header>
+  <title><![CDATA[Jared的Android之路]]></title>
+  <link href="http://jaredlam.github.io/atom.xml" rel="self"/>
+  <link href="http://jaredlam.github.io/"/>
+  <updated>2015-10-10T16:10:50+08:00</updated>
+  <id>http://jaredlam.github.io/</id>
+  <author>
+    <name><![CDATA[Jared Luo]]></name>
     
-      <h1 class="entry-title"><a href="/blog/2015/10/10/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun-er/">Android中FragmentPagerAdapter对Fragment的缓存(二)</a></h1>
-    
-    
-      <p class="meta">
-        
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
 
-
-
-
-<time class='entry-date' datetime='2015-10-10T11:57:04+08:00'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>11:57 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><blockquote><p>上一篇我们谈到了，当应用程序恢复时，由于FragmentPagerAdapter对Fragment进行了缓存的读取，导致其并未使用在Activity中新创建的Fragment实例。今天我们来看如何解决这种情况。</p></blockquote>
+  
+  <entry>
+    <title type="html"><![CDATA[Android中FragmentPagerAdapter对Fragment的缓存(二)]]></title>
+    <link href="http://jaredlam.github.io/blog/2015/10/10/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun-er/"/>
+    <updated>2015-10-10T11:57:04+08:00</updated>
+    <id>http://jaredlam.github.io/blog/2015/10/10/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun-er</id>
+    <content type="html"><![CDATA[<blockquote><p>上一篇我们谈到了，当应用程序恢复时，由于FragmentPagerAdapter对Fragment进行了缓存的读取，导致其并未使用在Activity中新创建的Fragment实例。今天我们来看如何解决这种情况。</p></blockquote>
 
 <p>&emsp;根据<a href="http://jaredlam.github.io/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun/">上篇Blog</a>的描述，我们不难发现，目前需要解决的问题有以下两个：</p>
 
@@ -367,35 +295,15 @@
 <p>有一点需要注意的是，mFragment数组需要在每个页面都实例化好了之后才会填充完成，需要注意调用的时机。</p>
 
 <p>FragmentPagerAdapter对Fragment缓存的分析就是这么多了，欢迎指正。</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun/">Android中FragmentPagerAdapter对Fragment的缓存(一)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-10-08T21:02:43+08:00'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>8</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>9:02 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><blockquote><p>ViewPager + FragmentPagerAdapter，时我们经常使用的一对搭档，其实际应用的代码也非常简单，但是也有一些容易被忽略的地方，这次我们就来讨论下FragmentPagerAdapter对Fragment的缓存应用。</p></blockquote>
+  <entry>
+    <title type="html"><![CDATA[Android中FragmentPagerAdapter对Fragment的缓存(一)]]></title>
+    <link href="http://jaredlam.github.io/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun/"/>
+    <updated>2015-10-08T21:02:43+08:00</updated>
+    <id>http://jaredlam.github.io/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun</id>
+    <content type="html"><![CDATA[<blockquote><p>ViewPager + FragmentPagerAdapter，时我们经常使用的一对搭档，其实际应用的代码也非常简单，但是也有一些容易被忽略的地方，这次我们就来讨论下FragmentPagerAdapter对Fragment的缓存应用。</p></blockquote>
 
 <p>&emsp;我们可以先看看最简单的实现，自定义Adapter如下：</p>
 
@@ -491,7 +399,7 @@
 
 <p>&emsp;这样就完成了一个FragmentPagerAdapter最基本的应用。现在，看上去一切都如我们所愿，但是真的没有任何问题了吗？</p>
 
-<p><img src="/images/20151008_02.png"></p>
+<p><img src="http://jaredlam.github.io/images/20151008_02.png"></p>
 
 <p>&emsp;接下来，我们来模拟一下程序运行在后台时，Android系统由于内存紧张，杀掉我们程序进程的情况：</p>
 
@@ -499,13 +407,13 @@
 <li>首先运行程序至前台</li>
 <li>接下来，点击Home键，返回桌面，同时我们的程序退回至后台运行。</li>
 <li>进入Android Studio中，点击Android Monitor这个tab，并选择当前Device，并选择我们程序的进程名。</li>
-<li>点击Terminal Application这个小红叉按钮，如下图：<img src="/images/20151008_01.png"></li>
+<li>点击Terminal Application这个小红叉按钮，如下图：<img src="http://jaredlam.github.io/images/20151008_01.png"></li>
 <li>这个时候后台进程已经被杀掉了，但是应用程序历史里我们的应用还在，所以长按Home键，并选择我们的程序，让其恢复到前台。</li>
 <li>这时会看到，程序的确恢复到之前的页面。但奇怪的是，页面上却只有Hello，我们之前传入的Two到哪里去了？</li>
 </ol>
 </blockquote>
 
-<p><img src="/images/20151008_03.png"></p>
+<p><img src="http://jaredlam.github.io/images/20151008_03.png"></p>
 
 <p>&emsp;Fragment代码也比较简单，通过日志，我们发现恢复时，mText字段为空。所以页面上对应的TextView无法显示。</p>
 
@@ -670,35 +578,15 @@
 <p>&emsp;到这里，问题就清楚了，由于FragmentPagerAdapter会主动的去取缓存当中的Fragment，所以导致恢复回来之后，Fragment的实例不一样的问题。</p>
 
 <p>&emsp;至于为什么mText字段为空，以及怎样解决这个情况，我们下一篇再来讨论^_^。</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/10/02/android-listviewzhong-shi-yong-duo-chong-typeshi-,getitemviewtypefan-hui-zhi-bu-neng-wei-fu-shu-,te-bie-shi-2/">Android ListView中使用多种Type时，getItemViewType返回值不能为负数，特别是-2</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2015-10-02T16:03:39+08:00'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>2</span><span class='date-suffix'>nd</span>, <span class='date-year'>2015</span></span> <span class='time'>4:03 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>背景</h2>
+  <entry>
+    <title type="html"><![CDATA[Android ListView中使用多种Type时，getItemViewType返回值不能为负数，特别是-2]]></title>
+    <link href="http://jaredlam.github.io/blog/2015/10/02/android-listviewzhong-shi-yong-duo-chong-typeshi-,getitemviewtypefan-hui-zhi-bu-neng-wei-fu-shu-,te-bie-shi-2/"/>
+    <updated>2015-10-02T16:03:39+08:00</updated>
+    <id>http://jaredlam.github.io/blog/2015/10/02/android-listviewzhong-shi-yong-duo-chong-typeshi-,getitemviewtypefan-hui-zhi-bu-neng-wei-fu-shu-,te-bie-shi-2</id>
+    <content type="html"><![CDATA[<h2>背景</h2>
 
 <blockquote><p>大家在Android开发中使用，常常由于业务的需求，会重写ListView的getItemViewType方法，来展示不同种类的Items；比如微博客户端，就有很多类型的Item(比如，普通微博，转发，推荐&hellip;)。 在公司项目的开发中，我们也采用了这种手段。但是没想到却意外的遇到了问题&hellip;&hellip;</p></blockquote>
 
@@ -881,67 +769,7 @@
 </code></pre>
 
 <p>&emsp;话说，自己对文档和源码不熟悉，才导致了这次的问题；编写代码的时候还是要注意细节，要不很容易造成隐含的问题。不过话说回来，Android这API设计的，也太&hellip;</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
-<aside class="sidebar">
-  
-    <section>
-  <h1>Recent Posts</h1>
-  <ul id="recent_posts">
-    
-      <li class="post">
-        <a href="/blog/2015/10/10/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun-er/">Android中FragmentPagerAdapter对Fragment的缓存(二)</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun/">Android中FragmentPagerAdapter对Fragment的缓存(一)</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/10/02/android-listviewzhong-shi-yong-duo-chong-typeshi-,getitemviewtypefan-hui-zhi-bu-neng-wei-fu-shu-,te-bie-shi-2/">Android ListView中使用多种Type时，getItemViewType返回值不能为负数，特别是-2</a>
-      </li>
-    
-  </ul>
-</section>
-
-
-
-
-
-  
-</aside>
-
-    </div>
-  </div>
-  <footer role="contentinfo"><p>
-  Copyright &copy; 2015 - Jared Luo -
-  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
-<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1256505848'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s4.cnzz.com/z_stat.php%3Fid%3D1256505848%26show%3Dpic2' type='text/javascript'%3E%3C/script%3E"));</script>
-</p>
-
-</footer>
-  
-
-
-
-
-
-
-
-
-
-
-
-</body>
-</html>
+</feed>
