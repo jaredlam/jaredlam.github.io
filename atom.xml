@@ -4,7 +4,7 @@
   <title><![CDATA[Jared的Android之路]]></title>
   <link href="http://jaredlam.github.io/atom.xml" rel="self"/>
   <link href="http://jaredlam.github.io/"/>
-  <updated>2015-12-23T14:56:49+08:00</updated>
+  <updated>2015-12-27T19:16:36+08:00</updated>
   <id>http://jaredlam.github.io/</id>
   <author>
     <name><![CDATA[Jared Luo]]></name>
@@ -75,7 +75,292 @@ at android.support.v4.app.BackStackRecord.commit(BackStackRecord.java:574)
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Android中FragmentPagerAdapter对Fragment的缓存]]></title>
+    <title type="html"><![CDATA[Android中FragmentPagerAdapter对Fragment的缓存(二)]]></title>
+    <link href="http://jaredlam.github.io/blog/2015/10/10/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun-er/"/>
+    <updated>2015-10-10T11:57:04+08:00</updated>
+    <id>http://jaredlam.github.io/blog/2015/10/10/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun-er</id>
+    <content type="html"><![CDATA[<blockquote><p>上一篇我们谈到了，当应用程序恢复时，由于FragmentPagerAdapter对Fragment进行了缓存的读取，导致其并未使用在Activity中新创建的Fragment实例。今天我们来看如何解决这种情况。</p></blockquote>
+
+<p>&emsp;根据<a href="http://jaredlam.github.io/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun/">上篇Blog</a>的描述，我们不难发现，目前需要解决的问题有以下两个：</p>
+
+<p>&emsp;1. 缓存Fragment内部成员变量缺失的问题。</p>
+
+<p>&emsp;2. 新Fragment的创建和缓存Fragment使用之间的矛盾。</p>
+
+<p>&emsp;下面先来解决第一个问题，缓存Fragment内部成员变量缺失。<a href="http://jaredlam.github.io/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun/">上篇Blog</a>中，Fragment当中，有一个成员变量mText，是通过setter的方式在创建Fragment之初设置进去的。但是在经历了一系列的存储和恢复操作过后，其值在最终却为空，导致了程序展示的异常。那么能不能让mText也在Fragment中同步缓存和恢复呢？</p>
+
+<p>&emsp;最先能想到的方法，就是通过Fragment的onSaveInstanceState方法在进程被杀掉时存储，当恢复时通过onCreateView的savedInstanceState参数取出；代码如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="nd">@Override</span>
+</span><span class='line'> <span class="kd">public</span> <span class="n">View</span> <span class="nf">onCreateView</span><span class="o">(</span><span class="n">LayoutInflater</span> <span class="n">inflater</span><span class="o">,</span> <span class="n">ViewGroup</span> <span class="n">container</span><span class="o">,</span> <span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="o">...</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">savedInstanceState</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">mText</span> <span class="o">=</span> <span class="n">savedInstanceState</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">SAVED_KEY_TEXT</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="o">...</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">onSaveInstanceState</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">outState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onSaveInstanceState</span><span class="o">(</span><span class="n">outState</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">outState</span><span class="o">.</span><span class="na">putString</span><span class="o">(</span><span class="n">SAVED_KEY_TEXT</span><span class="o">,</span> <span class="n">mText</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&emsp;这种Activity和Fragment通用的方法，无疑是应用被杀掉时我们存储数据比较好的选择。不过还有其他方式吗？</p>
+
+<p>&emsp;目前，mText是通过setter向Fragment设置的，这样做从实现来讲没有问题，不过其实并不是Android官方文档推荐的最佳实践; 官方文档上不推荐使用setter或者重写默认构造器的方式来传递参数：</p>
+
+<blockquote><p>It is strongly recommended that subclasses do not have other constructors with parameters, since these constructors will not be called when the fragment is re-instantiated; instead, arguments can be supplied by the caller with setArguments(Bundle) and later retrieved by the Fragment with getArguments().</p></blockquote>
+
+<p>&emsp;原因是，当Fragment重新被恢复时，不会去重新调用这些setter/有参构造方法; 而是会调用onCreateView，我们却可以在其中重新调用getArguments去获取这些参数。这就保证了在恢复过后，我们需要传入的参数可以重新被设置。一番改造之后如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>    <span class="n">TestFragment</span> <span class="n">fragmentOne</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TestFragment</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">Bundle</span> <span class="n">bundleOne</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Bundle</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">bundleOne</span><span class="o">.</span><span class="na">putString</span><span class="o">(</span><span class="n">TestFragment</span><span class="o">.</span><span class="na">PARAM_KEY_TEXT</span><span class="o">,</span> <span class="s">&quot;One&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">fragmentOne</span><span class="o">.</span><span class="na">setArguments</span><span class="o">(</span><span class="n">bundleOne</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">TestFragment</span> <span class="n">fragmentTwo</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TestFragment</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">Bundle</span> <span class="n">bundleTwo</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Bundle</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">bundleTwo</span><span class="o">.</span><span class="na">putString</span><span class="o">(</span><span class="n">TestFragment</span><span class="o">.</span><span class="na">PARAM_KEY_TEXT</span><span class="o">,</span> <span class="s">&quot;Two&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">fragmentTwo</span><span class="o">.</span><span class="na">setArguments</span><span class="o">(</span><span class="n">bundleTwo</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">TestFragment</span> <span class="n">fragmentThree</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">TestFragment</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">Bundle</span> <span class="n">bundleThree</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Bundle</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">bundleThree</span><span class="o">.</span><span class="na">putString</span><span class="o">(</span><span class="n">TestFragment</span><span class="o">.</span><span class="na">PARAM_KEY_TEXT</span><span class="o">,</span> <span class="s">&quot;Three&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">fragmentThree</span><span class="o">.</span><span class="na">setArguments</span><span class="o">(</span><span class="n">bundleThree</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&emsp;这样传入的参数，就不需要在onSaveInstanceState里面去手动保存了。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="n">View</span> <span class="nf">onCreateView</span><span class="o">(</span><span class="n">LayoutInflater</span> <span class="n">inflater</span><span class="o">,</span> <span class="n">ViewGroup</span> <span class="n">container</span><span class="o">,</span> <span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">View</span> <span class="n">view</span> <span class="o">=</span> <span class="n">inflater</span><span class="o">.</span><span class="na">inflate</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">fragment_test</span><span class="o">,</span> <span class="n">container</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">TextView</span> <span class="n">textView</span> <span class="o">=</span> <span class="o">(</span><span class="n">TextView</span><span class="o">)</span> <span class="n">view</span><span class="o">.</span><span class="na">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">center_text_view</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">mText</span> <span class="o">=</span> <span class="o">(</span><span class="n">getArguments</span><span class="o">()</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="n">getArguments</span><span class="o">().</span><span class="na">getString</span><span class="o">(</span><span class="n">PARAM_KEY_TEXT</span><span class="o">)</span> <span class="o">:</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>        <span class="n">textView</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="n">mText</span><span class="o">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">view</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&emsp;第一个问题到这里就处理好了，接下来看看第二个问题：怎样解决onCreate中新实例化的Fragment，与Adapter中FragmentManager中取出的Fragment不一致的冲突。</p>
+
+<p>&emsp;虽然mText找回来了，但是如果我们需要对Activity中实例化的Fragment做一些进一步的操作，比如传入一些Listener之类的事情，就会遇到一些麻烦，因为毕竟我们处理的这些Fragment，实际上并不是当前展示在屏幕上的Fragment。</p>
+
+<p>&emsp;<a href="http://jaredlam.github.io/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun/">上篇Blog</a>中讲到，FragmentPagerAdapter使用container.getId()与getItemId拼接的字符串作为FragmentManager中缓存的Key，FragmentPagerAdapter代码如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>  <span class="n">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">makeFragmentName</span><span class="o">(</span><span class="n">container</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">itemId</span><span class="o">);</span>
+</span><span class='line'>  <span class="n">Fragment</span> <span class="n">fragment</span> <span class="o">=</span> <span class="n">mFragmentManager</span><span class="o">.</span><span class="na">findFragmentByTag</span><span class="o">(</span><span class="n">name</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">private</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">makeFragmentName</span><span class="o">(</span><span class="kt">int</span> <span class="n">viewId</span><span class="o">,</span> <span class="kt">long</span> <span class="n">id</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;android:switcher:&quot;</span> <span class="o">+</span> <span class="n">viewId</span> <span class="o">+</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="n">id</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&emsp;从上面的代码来看，其实要避免缓存和新创建的Fragment不一致，最简单的方式是，通过重写getItemId()方法，让每次打开应用返回不同的值(比如随机数之内的)，让FragmentPagerAdapter找不到之前的缓存，就会使用我们新传入的实例了。</p>
+
+<p>&emsp;不过这样做，看起来既不优雅，也不靠谱。毕竟Android官方给我们提供了这样一种缓存机制，那我们还是应该考虑怎样利用才好。</p>
+
+<p>&emsp;1. 既然有缓存，那我们不必在Activity中每次都去新创建Fragment实例了。从源码中可以看出，每次如果FragmentPagerAdapter需要新实例化Fragment的话，都回去调用getItem方法，所以，可以考虑把Fragment的实例化工作放到getItem当中去。</p>
+
+<p>&emsp;2. 考虑到后面我们会使用到这些Fragment实例，可以考虑在instantiateItem当中去获取并存放在数组当中。这里选择到instantiateItem，而不是getItem方法中去取的原因是：如果一旦出现有缓存的情况，FragmentPagerAdapter并不会调用getItem方法，如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>    <span class="n">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">makeFragmentName</span><span class="o">(</span><span class="n">container</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">itemId</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">Fragment</span> <span class="n">fragment</span> <span class="o">=</span> <span class="n">mFragmentManager</span><span class="o">.</span><span class="na">findFragmentByTag</span><span class="o">(</span><span class="n">name</span><span class="o">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">fragment</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">DEBUG</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">v</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;Attaching item #&quot;</span> <span class="o">+</span> <span class="n">itemId</span> <span class="o">+</span> <span class="s">&quot;: f=&quot;</span> <span class="o">+</span> <span class="n">fragment</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">mCurTransaction</span><span class="o">.</span><span class="na">attach</span><span class="o">(</span><span class="n">fragment</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">fragment</span> <span class="o">=</span> <span class="n">getItem</span><span class="o">(</span><span class="n">position</span><span class="o">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">DEBUG</span><span class="o">)</span> <span class="n">Log</span><span class="o">.</span><span class="na">v</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;Adding item #&quot;</span> <span class="o">+</span> <span class="n">itemId</span> <span class="o">+</span> <span class="s">&quot;: f=&quot;</span> <span class="o">+</span> <span class="n">fragment</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">mCurTransaction</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">container</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">fragment</span><span class="o">,</span>
+</span><span class='line'>                <span class="n">makeFragmentName</span><span class="o">(</span><span class="n">container</span><span class="o">.</span><span class="na">getId</span><span class="o">(),</span> <span class="n">itemId</span><span class="o">));</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&emsp;按照上面两点想法，经过改造的Adapter的代码如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">CustomPagerAdapter</span> <span class="kd">extends</span> <span class="n">FragmentPagerAdapter</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">COUNT</span> <span class="o">=</span> <span class="mi">3</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">Fragment</span><span class="o">[]</span> <span class="n">mFragments</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">Context</span> <span class="n">mContext</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="nf">CustomPagerAdapter</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">FragmentManager</span> <span class="n">fm</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">(</span><span class="n">fm</span><span class="o">);</span>
+</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">mContext</span> <span class="o">=</span> <span class="n">context</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">mFragments</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Fragment</span><span class="o">[</span><span class="n">COUNT</span><span class="o">];</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Fragment</span> <span class="nf">getItem</span><span class="o">(</span><span class="kt">int</span> <span class="n">position</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">String</span> <span class="n">text</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">switch</span> <span class="o">(</span><span class="n">position</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">case</span> <span class="mi">0</span><span class="o">:</span>
+</span><span class='line'>                <span class="n">text</span> <span class="o">=</span> <span class="s">&quot;One&quot;</span><span class="o">;</span>
+</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">case</span> <span class="mi">1</span><span class="o">:</span>
+</span><span class='line'>                <span class="n">text</span> <span class="o">=</span> <span class="s">&quot;Two&quot;</span><span class="o">;</span>
+</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">case</span> <span class="mi">2</span><span class="o">:</span>
+</span><span class='line'>                <span class="n">text</span> <span class="o">=</span> <span class="s">&quot;Three&quot;</span><span class="o">;</span>
+</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">default</span><span class="o">:</span>
+</span><span class='line'>                <span class="n">text</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="n">Bundle</span> <span class="n">bundle</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Bundle</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">bundle</span><span class="o">.</span><span class="na">putString</span><span class="o">(</span><span class="n">TestFragment</span><span class="o">.</span><span class="na">PARAM_KEY_TEXT</span><span class="o">,</span> <span class="n">text</span><span class="o">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">Fragment</span><span class="o">.</span><span class="na">instantiate</span><span class="o">(</span><span class="n">mContext</span><span class="o">,</span> <span class="n">TestFragment</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getName</span><span class="o">(),</span> <span class="n">bundle</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">getCount</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">COUNT</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">getItemId</span><span class="o">(</span><span class="kt">int</span> <span class="n">position</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">position</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">instantiateItem</span><span class="o">(</span><span class="n">ViewGroup</span> <span class="n">container</span><span class="o">,</span> <span class="kt">int</span> <span class="n">position</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">Fragment</span> <span class="n">fragment</span> <span class="o">=</span> <span class="o">(</span><span class="n">Fragment</span><span class="o">)</span> <span class="kd">super</span><span class="o">.</span><span class="na">instantiateItem</span><span class="o">(</span><span class="n">container</span><span class="o">,</span> <span class="n">position</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">mFragments</span><span class="o">[</span><span class="n">position</span><span class="o">]</span> <span class="o">=</span> <span class="n">fragment</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">fragment</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Fragment</span><span class="o">[]</span> <span class="nf">getFragments</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">mFragments</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>有一点需要注意的是，mFragment数组需要在每个页面都实例化好了之后才会填充完成，需要注意调用的时机。</p>
+
+<p>FragmentPagerAdapter对Fragment缓存的分析就是这么多了，欢迎指正。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Android中FragmentPagerAdapter对Fragment的缓存(一)]]></title>
     <link href="http://jaredlam.github.io/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun/"/>
     <updated>2015-10-08T21:02:43+08:00</updated>
     <id>http://jaredlam.github.io/blog/2015/10/08/androidzhong-fragmentpageradapterdui-fragmentde-huan-cun</id>
